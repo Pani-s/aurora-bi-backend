@@ -1,6 +1,7 @@
 # Aurora AI数据可视化平台后端
 前端：[Pani-s/aurora-bi-front: Aurora AI数据可视化平台前端 (github.com)](https://github.com/Pani-s/aurora-bi-front)
-在线访问：[在线访问](bi.soogyu.xyz)
+
+
 
 ## 项目介绍
 
@@ -15,6 +16,7 @@ AIGC : AI生成内容。
 **优势：** 让不会数据分析的用户也可以通过输入目标快速完成数据分析，大幅节约人力成本，将会用到 AI 接口生成分析结果
 
 ### ***预览图：***
+在线访问：[在线访问](http://bi.soogyu.xyz)
 
 <img src="http://pics.soogyu.xyz/picgo/bi_sample_sync.PNG" style="zoom: 50%;" />
 
