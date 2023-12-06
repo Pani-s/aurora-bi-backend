@@ -1,5 +1,6 @@
 # Aurora AI数据可视化平台后端
 前端：[Pani-s/aurora-bi-front: Aurora AI数据可视化平台前端 (github.com)](https://github.com/Pani-s/aurora-bi-front)
+在线访问：[在线访问](bi.soogyu.xyz)
 
 ## 项目介绍
 
