@@ -1,8 +1,11 @@
 # Aurora AI数据可视化平台后端
+前端：[Pani-s/aurora-bi-front: Aurora AI数据可视化平台前端 (github.com)](https://github.com/Pani-s/aurora-bi-front)
 
-##项目介绍
 
-###介绍:
+
+## 项目介绍
+
+### 介绍:
 
 基于 **React+Spring Boot+MQ+AIGC** 的智能数据分析平台。
 区别于传统BI,用户只需要导入原始数据集、并输入分析诉求，就能自动生成可视化图表及分析结论，实现数据分
@@ -13,6 +16,7 @@ AIGC : AI生成内容。
 **优势：** 让不会数据分析的用户也可以通过输入目标快速完成数据分析，大幅节约人力成本，将会用到 AI 接口生成分析结果
 
 ### ***预览图：***
+在线访问：[在线访问](http://bi.soogyu.xyz)
 
 <img src="http://pics.soogyu.xyz/picgo/bi_sample_sync.PNG" style="zoom: 50%;" />
 
@@ -30,9 +34,9 @@ AIGC : AI生成内容。
 
 <img src="http://pics.soogyu.xyz/pani/bi/bi_structrue.png" style="zoom: 50%;" />
 
-##技术栈
+## 技术栈
 
-###**前端**
+### **前端**
 - React 18
 - Ant Design Pro5.x 脚手架
 - Umi4 前端框架
@@ -40,7 +44,7 @@ AIGC : AI生成内容。
 - Echarts 可视化库
 - OpenAPI 前端代码生成
 
-###**后端**
+### **后端**
 - Java Spring Boot
 - MySQL 数据库
 - MyBatis-Plus 及 MyBatis X 自动生成
@@ -75,4 +79,4 @@ AIGC : AI生成内容。
 - 下载/拉取本项目到本地
 - 通过 IDEA 代码编辑器进行打开项目，等待依赖的下载
 - 修改配置文件 `application.yaml` 的信息，比如数据库、Redis、RabbitMQ等
-- 修改信息完成后，一键行运行项目
+- 修改信息完成后，一键行运行项目# aurora-bi-backend
