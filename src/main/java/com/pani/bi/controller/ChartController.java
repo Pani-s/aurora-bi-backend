@@ -289,7 +289,7 @@ public class ChartController {
                                                  GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         // 通过response对象拿到用户id(必须登录才能使用)
         User loginUser = userService.getLoginUser(request);
-        redisLimiterManager.doRateLimit("genChartByAi_" + loginUser.getId());
+        redisLimiterManager.doRateLimit(ChartConstant.GEN_CHART_LIMIT_KEY + loginUser.getId());
 
         String chartType = genChartByAiRequest.getChartType();
         Integer aiChannel = genChartByAiRequest.getAiChannel();
@@ -341,7 +341,7 @@ public class ChartController {
             result = aiManagerXunFei.doChat(userInput.toString());
         }
         //剪切【【【【【
-        String[] split = result.split("【【【【【");
+        String[] split = result.split(ChartConstant.AI_SPLIT_STR);
         if (split.length < ChartConstant.CHART_SPLIT_LENGTH) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 生成错误");
         }
@@ -384,8 +384,8 @@ public class ChartController {
                                                       GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         // 通过response对象拿到用户id(必须登录才能使用)
         User loginUser = userService.getLoginUser(request);
-        //todo: key设为一个 static final变量 genChartByAi_
-        redisLimiterManager.doRateLimit("genChartByAi_" + loginUser.getId());
+        //key设为一个 static final变量 genChartByAi_
+        redisLimiterManager.doRateLimit(ChartConstant.GEN_CHART_LIMIT_KEY + loginUser.getId());
 
         String chartType = genChartByAiRequest.getChartType();
         String name = genChartByAiRequest.getName();
@@ -440,7 +440,7 @@ public class ChartController {
         ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "图表保存失败");
 
         //异步
-        //todo:线程池满了会抛异常
+        //线程池满了会抛异常 -- 已解决，目前先忽视掉了
         CompletableFuture.runAsync( ()->{
             Chart updateChart = new Chart();
             updateChart.setId(chart.getId());
@@ -456,10 +456,11 @@ public class ChartController {
             if(aiChannel.equals(ChartConstant.YU_CONG_MING)){
                 result = aiManagerYu.doChat(MODELID, userInput.toString());
             }else if(aiChannel.equals(ChartConstant.XUN_FEI)){
+//                result = aiManagerXunFei.doChat(userInput.toString());
                 result = aiManagerXunFei.doChat(userInput.toString());
             }
             //剪切【【【【【
-            String[] split = result.split("【【【【【");
+            String[] split = result.split(ChartConstant.AI_SPLIT_STR);
             if (split.length < ChartConstant.CHART_SPLIT_LENGTH) {
                 handleChartUpdateError(chart.getId(), "AI 生成错误");
             }
@@ -497,7 +498,7 @@ public class ChartController {
                                                       GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         // 通过response对象拿到用户id(必须登录才能使用)
         User loginUser = userService.getLoginUser(request);
-        redisLimiterManager.doRateLimit("genChartByAi_" + loginUser.getId());
+        redisLimiterManager.doRateLimit(ChartConstant.GEN_CHART_LIMIT_KEY + loginUser.getId());
 
         String chartType = genChartByAiRequest.getChartType();
         String name = genChartByAiRequest.getName();
@@ -580,4 +581,8 @@ public class ChartController {
     }
     //endregion
 
+    @GetMapping("/reload/gen")
+    public BaseResponse<Boolean> reloadChartByAi(long chartId, HttpServletRequest request) {
+        return ResultUtils.success(chartService.reloadChartByAi(chartId, request));
+    }
 }

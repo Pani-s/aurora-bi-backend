@@ -44,8 +44,8 @@ public class RedissonConfig {
                 // 设置redis的地址
                 .setAddress("redis://" + host + ":" + port);
                 // 设置redis的密码(redis有密码才设置)
-        //todo pwd
 //                .setPassword(password);
+        //todo redis pwd..
 
         // 2.创建Redisson实例
         RedissonClient redisson = Redisson.create(config);

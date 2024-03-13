@@ -7,6 +7,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Ignore application.yml file
+application-prod.yml
+application-dev.yml
+application-test.yml
+
+**/src/test/**/mq/BiInitMain.java
+
 ### STS ###
 .apt_generated
 .classpath

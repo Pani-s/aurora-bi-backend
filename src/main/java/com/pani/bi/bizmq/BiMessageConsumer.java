@@ -27,7 +27,11 @@ import static com.pani.bi.constant.CommonConstant.MODELID;
 /**
  * @author Pani
  * @date Created in 2023/11/27 21:11
- * @description
+ * @description /*
+ * -- @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag是一个方法参数注解,
+ * 用于从消息头中获取投递标签(deliveryTag),在RabbitMQ中,每条消息都会被分配一个唯一的投递标签，
+ * 用于标识该消息在通道中的投递状态和顺序。通过使用@Header(AmqpHeaders.DELIVERY_TAG)注解,
+ * 可以从消息头中提取出该投递标签,并将其赋值给long deliveryTag参数。
  */
 
 @Component
@@ -44,8 +48,6 @@ public class BiMessageConsumer {
     private AiManagerXunFei aiManagerXunFei;
 
 
-
-
     /**
      * 接收消息的方法
      * 使用@SneakyThrows注解简化异常处理
@@ -56,7 +58,7 @@ public class BiMessageConsumer {
      * @param deliveryTag 消息的投递标签，用于唯一标识一条消息
      */
     @SneakyThrows
-    @RabbitListener(queues = {BiMqConstant.BI_QUEUE_NAME}, ackMode = "MANUAL")
+    //    @RabbitListener(queues = {BiMqConstant.BI_QUEUE_NAME}, ackMode = "MANUAL")
     public void receiveMessage(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
         log.info("receiveMessage message = {}", message);
         long chartId;
@@ -82,9 +84,9 @@ public class BiMessageConsumer {
         Integer aiChannel = chart.getAiChannel();
         String userInput = buildUserInput(chart);
         String result = null;
-        if(aiChannel.equals(ChartConstant.YU_CONG_MING)){
+        if (aiChannel.equals(ChartConstant.YU_CONG_MING)) {
             result = aiManagerYu.doChatMq(MODELID, userInput.toString());
-        }else if(aiChannel.equals(ChartConstant.XUN_FEI)){
+        } else if (aiChannel.equals(ChartConstant.XUN_FEI)) {
             result = aiManagerXunFei.doChat(userInput.toString());
         }
         if (result == null) {
@@ -92,7 +94,7 @@ public class BiMessageConsumer {
             return;
         }
         //剪切【【【【【
-        String[] split = result.split("【【【【【");
+        String[] split = result.split(ChartConstant.AI_SPLIT_STR);
         if (split.length < ChartConstant.CHART_SPLIT_LENGTH) {
             handleChartUpdateError(chartId, "AI 生成结果有错误");
             return;
@@ -132,6 +134,7 @@ public class BiMessageConsumer {
      */
     @RabbitListener(queues = {BiMqConstant.BI_QUEUE_NAME}, ackMode = "MANUAL")
     public void receiveMessageNew(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
+        System.err.println("============消费者消费消息==================");
         if (StringUtils.isBlank(message)) {
             throwExceptionAndNackMessage(channel, deliveryTag);
             return;
@@ -142,12 +145,15 @@ public class BiMessageConsumer {
             throwExceptionAndNackMessage(channel, deliveryTag);
             return;
         }
+        Integer aiChannel = chart.getAiChannel();
         Long userId = chart.getUserId();
-        // 检查用户任务计数器
+        //检查用户任务计数器 ，如果同时在开好几个生成的，就不让你
         int userTaskCount = (int) getRunningTaskCount(userId);
         try {
-            if (userTaskCount <= BiMqConstant.MAX_CONCURRENT_CHARTS) {
-                //这位老哥的代码，因为我没把数据分离就不用了
+            if (userTaskCount > BiMqConstant.MAX_CONCURRENT_CHARTS) {
+                channel.basicNack(deliveryTag, false, false);
+            }
+            //todo: 分库分表 因为我没把数据分离就不用了
                 /*
                 chartService.updateById(new Chart(Long.parseLong(message), ChartConstant.RUNNING,""));
                 String csvData = ChartDataUtil.changeDataToCSV(chartMapper.queryChartData(Long.parseLong(message)));
@@ -158,45 +164,46 @@ public class BiMessageConsumer {
                     throwExceptionAndNackMessage(channel, deliveryTag);
                 }
                  */
-
-                boolean b = chartService.updateById(new Chart(Long.parseLong(message), ChartConstant.RUNNING));
-                Long chartId = chart.getId();
-                if (!b) {
-                    throwExceptionAndNackMessage(channel, deliveryTag);
-                    return;
-                }
-                String userInput = buildUserInput(chart);
-                String result = aiManagerYu.doChatMq(MODELID, userInput);
-                if (result == null) {
-                    throwExceptionAndNackMessage(channel, deliveryTag);
-                    return;
-                }
-                //剪切【【【【【
-                String[] split = result.split("【【【【【");
-                if (split.length < 3) {
-                    throwExceptionAndNackMessage(channel, deliveryTag);
-                    return;
-                }
-                String genChart = split[1].trim();
-                String genResult = split[2].trim();
-
-                // 调用AI得到结果之后,再更新一次
-                Chart updateChartResult = new Chart();
-                updateChartResult.setId(chartId);
-                updateChartResult.setGenChart(genChart);
-                updateChartResult.setGenResult(genResult);
-                updateChartResult.setChartState(ChartConstant.SUCCEED);
-                boolean updateResult = chartService.updateById(updateChartResult);
-                if (!updateResult) {
-                    throwExceptionAndNackMessage(channel, deliveryTag);
-                    return;
-                }
-
-                channel.basicAck(deliveryTag, false);
+            boolean b = chartService.updateById(new Chart(Long.parseLong(message), ChartConstant.RUNNING));
+            Long chartId = chart.getId();
+            if (!b) {
+                throwExceptionAndNackMessage(channel, deliveryTag);
                 return;
-            } else {
-                channel.basicNack(deliveryTag, false, true);
             }
+            String userInput = buildUserInput(chart);
+            //String result = aiManagerYu.doChatMq(MODELID, userInput);
+            String result = null;
+            if (aiChannel.equals(ChartConstant.YU_CONG_MING)) {
+                result = aiManagerYu.doChat(MODELID, userInput);
+            } else if (aiChannel.equals(ChartConstant.XUN_FEI)) {
+                result = aiManagerXunFei.doChat(userInput);
+            }
+            if (result == null) {
+                throwExceptionAndNackMessage(channel, deliveryTag);
+                return;
+            }
+            //剪切【【【【【
+            String[] split = result.split(ChartConstant.AI_SPLIT_STR);
+            if (split.length < ChartConstant.CHART_SPLIT_LENGTH) {
+                throwExceptionAndNackMessage(channel, deliveryTag);
+                return;
+            }
+            String genChart = split[1].trim();
+            String genResult = split[2].trim();
+
+            // 调用AI得到结果之后,再更新一次
+            Chart updateChartResult = new Chart();
+            updateChartResult.setId(chartId);
+            updateChartResult.setGenChart(genChart);
+            updateChartResult.setGenResult(genResult);
+            updateChartResult.setChartState(ChartConstant.SUCCEED);
+            boolean updateResult = chartService.updateById(updateChartResult);
+            if (!updateResult) {
+                throwExceptionAndNackMessage(channel, deliveryTag);
+                return;
+            }
+            //确认消息、、
+            channel.basicAck(deliveryTag, false);
         } catch (Exception e) {
             try {
                 channel.basicNack(deliveryTag, false, false);
@@ -216,6 +223,7 @@ public class BiMessageConsumer {
      */
     @RabbitListener(queues = {BiMqConstant.BI_DLX_QUEUE_NAME}, ackMode = "MANUAL")
     public void receiveErrorMessage(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
+        log.info("---------死信消费异常消息--------");
         if (StringUtils.isBlank(message)) {
             throwExceptionAndNackMessage(channel, deliveryTag);
         }
@@ -224,8 +232,8 @@ public class BiMessageConsumer {
         if (chart == null) {
             throwExceptionAndNackMessage(channel, deliveryTag);
         }
-        //todo:失败原因我怎么传？？？
-        chartService.updateById(new Chart(Long.parseLong(message), ChartConstant.FAILED, "执行失败"));
+        //失败原因我怎么传？？？ 传不了，只能统一失败了
+        chartService.updateById(new Chart(Long.parseLong(message), ChartConstant.FAILED, "执行失败 X_X"));
         try {
             channel.basicAck(deliveryTag, false);
         } catch (IOException e) {
@@ -245,7 +253,7 @@ public class BiMessageConsumer {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-        throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "出了点问题~~");
     }
 
     /**
@@ -263,6 +271,14 @@ public class BiMessageConsumer {
     //endregion
 
 
+    //region other方法
+
+    /**
+     * 解决图标更新时产生的error
+     *
+     * @param chartId
+     * @param execMessage
+     */
     private void handleChartUpdateError(long chartId, String execMessage) {
         Chart updateChartResult = new Chart();
         updateChartResult.setId(chartId);
@@ -271,7 +287,9 @@ public class BiMessageConsumer {
         updateChartResult.setExecMessage(time + execMessage);
         boolean updateResult = chartService.updateById(updateChartResult);
         if (!updateResult) {
-            log.error("更新图表失败状态失败" + chartId + "," + execMessage);
+            String s = "更新图表失败的状态失败" + chartId + "," + execMessage;
+            log.error(s);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, s);
         }
     }
 
@@ -294,6 +312,6 @@ public class BiMessageConsumer {
         userInput.append(chart.getChartData()).append("\n");
         return userInput.toString();
     }
-
+    //endregion
 
 }

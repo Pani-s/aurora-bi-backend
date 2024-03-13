@@ -9,7 +9,7 @@ import javax.annotation.Resource;
  * @descriptionservice作基础业务层 biz作为应用层业务层
  */
 
-@Component
+//@Component
 public class MyMessageProducer {
 
     @Resource

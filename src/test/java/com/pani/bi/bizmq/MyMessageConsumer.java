@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * @description
  */
 
-@Component
+//@Component
 @Slf4j
 public class MyMessageConsumer {
 

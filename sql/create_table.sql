@@ -41,3 +41,13 @@ create table if not exists chart
     execMessage text                               null comment '执行信息',
     chartState  int      default 0                 not null comment '生成状态：0:等待1:运行中2:失败3:成功'
 ) comment '图表信息表' collate = utf8mb4_unicode_ci;
+
+-- 用户表单数据csv格式
+create table chart_raw_csv
+(
+    chartId  bigint            not null comment 'chart图表id'
+        primary key,
+    csvData  text              not null comment 'csv格式的数据',
+    isDelete tinyint default 0 not null comment '是否删除（考虑到之后可能可以让用户修改原数据）'
+)
+    comment '用户表单数据csv格式的原数据' collate = utf8mb4_unicode_ci;

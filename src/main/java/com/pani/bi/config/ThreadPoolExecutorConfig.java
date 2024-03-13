@@ -4,10 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author Pani
@@ -32,7 +29,9 @@ public class ThreadPoolExecutorConfig {
         };
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor
                 (2, 4, 100, TimeUnit.SECONDS,
-                        new ArrayBlockingQueue<>(4),threadFactory );
+                        new ArrayBlockingQueue<>(5), threadFactory,
+                        new ThreadPoolExecutor.DiscardPolicy());
+        //忽视策略，米啊内
         return threadPoolExecutor;
     }
 }

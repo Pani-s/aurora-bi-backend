@@ -17,4 +17,8 @@ public interface ChartConstant {
     Integer YU_CONG_MING = 1;
     //endregion
     Integer CHART_SPLIT_LENGTH = 3;
+    //region redis_limit_key
+    String GEN_CHART_LIMIT_KEY = "genChartByAi_";
+    String AI_SPLIT_STR = "【【【【【";
+    //endregion
 }

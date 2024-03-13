@@ -32,6 +32,6 @@ public interface BiMqConstant {
     /**
      * 限制同时生成的图表数量
      */
-    int MAX_CONCURRENT_CHARTS = 5;
+    int MAX_CONCURRENT_CHARTS = 3;
 
 }
