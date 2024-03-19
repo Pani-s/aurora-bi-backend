@@ -2,11 +2,13 @@ package com.pani.bi.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.pani.bi.common.BaseResponse;
 import com.pani.bi.model.dto.user.UserPwdUpdateMyRequest;
 import com.pani.bi.model.dto.user.UserQueryRequest;
 import com.pani.bi.model.entity.User;
 import com.pani.bi.model.vo.LoginUserVO;
 import com.pani.bi.model.vo.UserVO;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -17,6 +19,13 @@ import java.util.List;
  * @author pani
  */
 public interface UserService extends IService<User> {
+
+    /**
+     * 重置密码
+     * @param userId
+     * @return
+     */
+   boolean resetPassword(Long userId);
 
     /**
      * 用户注册

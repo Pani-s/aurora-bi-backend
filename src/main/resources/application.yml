@@ -15,7 +15,7 @@ spring:
   # session 配置
   session:
     # 开启分布式 session
-    store-type: redis
+#    store-type: redis
     # 30 天过期
     timeout: 2592000
   # 数据库配置

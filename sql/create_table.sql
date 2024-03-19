@@ -51,3 +51,14 @@ create table chart_raw_csv
     isDelete tinyint default 0 not null comment '是否删除（考虑到之后可能可以让用户修改原数据）'
 )
     comment '用户表单数据csv格式的原数据' collate = utf8mb4_unicode_ci;
+
+-- 表AI数据
+create table chart_gen_result
+(
+    chartId   bigint        not null
+        primary key,
+    genChart  varchar(4096) not null comment '生成的图表可视化数据',
+    genResult varchar(4096) not null comment '生成的分析结果'
+)
+    comment '生成的图标可视化数据和结论' collate = utf8mb4_unicode_ci;
+

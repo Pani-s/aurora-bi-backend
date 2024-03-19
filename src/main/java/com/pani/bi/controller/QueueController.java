@@ -16,12 +16,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * @author Pani
  * @date Created in 2023/11/26 21:13
- * @description
+ * @description for test
  */
-@RestController
-@RequestMapping("/queue")
+//@RestController
+//@RequestMapping("/queue")
 @Slf4j
-@Profile({"dev","local"})
+//@Profile({"dev","local"})
 public class QueueController{
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;

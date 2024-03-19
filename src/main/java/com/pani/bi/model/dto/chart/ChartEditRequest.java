@@ -27,9 +27,9 @@ public class ChartEditRequest implements Serializable {
     private String name;
 
     /**
-     * 图表数据
+     * 图表数据 csv
      */
-    private String chartData;
+    private String csvData;
 
     /**
      * 图表类型

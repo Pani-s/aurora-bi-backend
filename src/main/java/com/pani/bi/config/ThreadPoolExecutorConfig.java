@@ -22,16 +22,15 @@ public class ThreadPoolExecutorConfig {
             @Override
             public Thread newThread(@NotNull Runnable r) {
                 Thread thread = new Thread(r);
-                thread.setName("线程" + i);
+                thread.setName("Chart Thread" + i);
                 i++;
                 return thread;
             }
         };
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor
                 (2, 4, 100, TimeUnit.SECONDS,
-                        new ArrayBlockingQueue<>(5), threadFactory,
-                        new ThreadPoolExecutor.DiscardPolicy());
-        //忽视策略，米啊内
+                        new ArrayBlockingQueue<>(5), threadFactory);
+        //忽视策略，米安内
         return threadPoolExecutor;
     }
 }

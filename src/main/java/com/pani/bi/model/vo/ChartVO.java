@@ -1,6 +1,5 @@
-package com.pani.bi.model.entity;
+package com.pani.bi.model.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -12,13 +11,11 @@ import java.util.Date;
  * @author Pani
  * @TableName chart
  */
-@TableName(value ="chart")
 @Data
-public class Chart implements Serializable {
+public class ChartVO implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
@@ -31,10 +28,25 @@ public class Chart implements Serializable {
      */
     private String name;
 
+//    /**
+//     * 图表数据
+//     */
+//    private String chartData;
+
     /**
      * 图表类型
      */
     private String chartType;
+
+    /**
+     * 生成的图表数据
+     */
+    private String genChart;
+
+    /**
+     * 生成的分析结论
+     */
+    private String genResult;
 
     /**
      * 创建用户 id
@@ -59,12 +71,6 @@ public class Chart implements Serializable {
     private Date updateTime;
 
     /**
-     * 是否删除
-     */
-    @TableLogic
-    private Integer isDelete;
-
-    /**
      *执行信息
      */
     private String execMessage;
@@ -74,18 +80,7 @@ public class Chart implements Serializable {
      */
     private Integer chartState;
 
-    @TableField(exist = false)
+
     private static final long serialVersionUID = 1L;
 
-    public Chart() {}
-
-    public Chart(long id, Integer chartState, String execMessage) {
-        this.id = id;
-        this.chartState = chartState;
-        this.execMessage = execMessage;
-    }
-    public Chart(long id, Integer chartState) {
-        this.id = id;
-        this.chartState = chartState;
-    }
 }

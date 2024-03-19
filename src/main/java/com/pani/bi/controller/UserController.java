@@ -234,6 +234,24 @@ public class UserController {
     }
 
     /**
+     * 重置密码
+     *
+     * @param userId
+     * @param request
+     * @return
+     */
+    @PostMapping("/reset/pwd")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> resetPassword(@RequestBody Long userId,
+                                               HttpServletRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        return ResultUtils.success(userService.resetPassword(userId));
+    }
+
+
+    /**
      * 分页获取用户封装列表
      *
      * @param userQueryRequest

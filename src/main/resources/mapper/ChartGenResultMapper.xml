@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pani.bi.mapper.ChartGenResultMapper">
+
+    <resultMap id="BaseResultMap" type="com.pani.bi.model.entity.ChartGenResult">
+            <id property="chartId" column="chartId" jdbcType="BIGINT"/>
+            <result property="genChart" column="genChart" jdbcType="VARCHAR"/>
+            <result property="genResult" column="genResult" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        chartId,genChart,genResult
+    </sql>
+</mapper>

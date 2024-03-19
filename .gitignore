@@ -7,7 +7,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Ignore application.yml file
+# Ignore application-- file
 application-prod.yml
 application-dev.yml
 application-test.yml

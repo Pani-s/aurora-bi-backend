@@ -6,6 +6,7 @@ import com.pani.bi.constant.ChartConstant;
 import com.pani.bi.manager.AiManagerYu;
 import com.pani.bi.mapper.ChartMapper;
 import com.pani.bi.model.entity.Chart;
+import com.pani.bi.model.entity.ChartGenResult;
 import com.pani.bi.service.ChartService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,13 +14,14 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author pani
  * @Description 用定时任务把失败状态的图表放到队列中:
- * 向每隔 5分钟 执行一个在数据库中【捞取失败的数据 重新进行ai分析】的操作
+ * 向每隔 10分钟 执行一个在数据库中【捞取失败的数据 重新进行ai分析】的操作
  */
 @Component
 @Slf4j
@@ -36,7 +38,7 @@ public class ReGenChartData {
     @Resource
     private BiMessageProducer biMessageProducer;
 
-    @Scheduled(cron = "0 0/5 * * * ?") // Every 5 minutes
+    @Scheduled(cron = "0 0/10 * * * ?") // Every 10 minutes
     public void doUpdateFailedChart() {
         log.info("【把失败状态的图表放到队列中】");
         QueryWrapper<Chart> queryWrapper = new QueryWrapper<>();
@@ -66,7 +68,7 @@ public class ReGenChartData {
 
 
     /**
-     * 异步更新失败的图表
+     * 异步更新失败的图表 - 线程池
      *
      * @param chart
      */
