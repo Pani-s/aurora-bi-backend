@@ -8,6 +8,7 @@ import com.pani.bi.common.DeleteRequest;
 import com.pani.bi.common.ErrorCode;
 import com.pani.bi.common.ResultUtils;
 import com.pani.bi.constant.FileConstant;
+import com.pani.bi.constant.RedisConstant;
 import com.pani.bi.constant.UserConstant;
 import com.pani.bi.exception.BusinessException;
 import com.pani.bi.exception.ThrowUtils;
@@ -20,6 +21,7 @@ import com.pani.bi.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -78,10 +80,10 @@ public class UserController {
      *
      * @param userLoginRequest
      * @param request
-     * @return
+     * @return token
      */
     @PostMapping("/login")
-    public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
+    public BaseResponse<String> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
         if (userLoginRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -90,8 +92,8 @@ public class UserController {
         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        LoginUserVO loginUserVO = userService.userLogin(userAccount, userPassword, request);
-        return ResultUtils.success(loginUserVO);
+//        LoginUserVO loginUserVO = userService.userLogin(userAccount, userPassword, request);
+        return ResultUtils.success(userService.userLogin(userAccount,userPassword,request));
     }
 
     /**
@@ -101,11 +103,12 @@ public class UserController {
      * @return
      */
     @PostMapping("/logout")
-    public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
+    public BaseResponse<Boolean> userLogout(@RequestHeader("Authorization") String token,
+                                            HttpServletRequest request) {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = userService.userLogout(request);
+        boolean result = userService.userLogout(token);
         return ResultUtils.success(result);
     }
 
@@ -233,22 +236,7 @@ public class UserController {
         return ResultUtils.success(userPage);
     }
 
-    /**
-     * 重置密码
-     *
-     * @param userId
-     * @param request
-     * @return
-     */
-    @PostMapping("/reset/pwd")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> resetPassword(@RequestBody Long userId,
-                                               HttpServletRequest request) {
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        return ResultUtils.success(userService.resetPassword(userId));
-    }
+
 
 
     /**
@@ -284,11 +272,13 @@ public class UserController {
      * 更新个人信息
      *
      * @param userUpdateMyRequest
+     * @param token token
      * @param request
      * @return
      */
     @PostMapping("/update/my")
     public BaseResponse<Boolean> updateMyUser(@RequestBody UserUpdateMyRequest userUpdateMyRequest,
+                                              @RequestHeader("Authorization") String token,
                                               HttpServletRequest request) {
         if (userUpdateMyRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -299,6 +289,7 @@ public class UserController {
         user.setId(loginUser.getId());
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
         return ResultUtils.success(true);
     }
 
@@ -349,13 +340,31 @@ public class UserController {
      */
     @PostMapping("/update/myPwd")
     public BaseResponse<Boolean> updatePwdMyUser(@RequestBody UserPwdUpdateMyRequest userPwdUpdateMyRequest,
+                                                 @RequestHeader("Authorization") String token,
                                                  HttpServletRequest request) {
         if (userPwdUpdateMyRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = userService.changePwd(userPwdUpdateMyRequest, request);
+        boolean result = userService.changePwd(userPwdUpdateMyRequest, request, token);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 重置密码
+     *
+     * @param userId
+     * @param request
+     * @return
+     */
+    @PostMapping("/reset/pwd")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> resetPassword(@RequestBody Long userId,
+                                               HttpServletRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        return ResultUtils.success(userService.resetPassword(userId));
     }
     // endregion
 }

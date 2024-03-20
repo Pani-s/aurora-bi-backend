@@ -1,0 +1,38 @@
+package com.pani.bi.utils;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+
+import java.util.Date;
+import java.util.Map;
+
+/**
+ * @author Pani
+ */
+public class JwtUtil {
+
+    private static final String KEY = "aurora";
+
+    /**
+     * 接收业务数据,生成token并返回
+     */
+    public static String genToken(Map<String, Object> claims) {
+        return JWT.create().withIssuer("auth0")
+                .withClaim("claims", claims)
+                //20min
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 20 * 60 ))
+                .sign(Algorithm.HMAC256(KEY));
+    }
+
+    /**
+     *  接收token,验证token,并返回业务数据
+     */
+    public static Map<String, Object> parseToken(String token) {
+        return JWT.require(Algorithm.HMAC256(KEY)).withIssuer("auth0")
+                .build()
+                .verify(token)
+                .getClaim("claims")
+                .asMap();
+    }
+
+}

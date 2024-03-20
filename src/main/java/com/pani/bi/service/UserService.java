@@ -2,13 +2,11 @@ package com.pani.bi.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.pani.bi.common.BaseResponse;
 import com.pani.bi.model.dto.user.UserPwdUpdateMyRequest;
 import com.pani.bi.model.dto.user.UserQueryRequest;
 import com.pani.bi.model.entity.User;
 import com.pani.bi.model.vo.LoginUserVO;
 import com.pani.bi.model.vo.UserVO;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -22,10 +20,11 @@ public interface UserService extends IService<User> {
 
     /**
      * 重置密码
+     *
      * @param userId
      * @return
      */
-   boolean resetPassword(Long userId);
+    boolean resetPassword(Long userId);
 
     /**
      * 用户注册
@@ -43,9 +42,9 @@ public interface UserService extends IService<User> {
      * @param userAccount  用户账户
      * @param userPassword 用户密码
      * @param request
-     * @return 脱敏后的用户信息
+     * @return token
      */
-    LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request);
+    String userLogin(String userAccount, String userPassword, HttpServletRequest request);
 
     /**
      * 获取当前登录用户
@@ -55,21 +54,28 @@ public interface UserService extends IService<User> {
      */
     User getLoginUser(HttpServletRequest request);
 
-    /**
-     * 获取当前登录用户（允许未登录）
-     *
-     * @param request
-     * @return
-     */
-    User getLoginUserPermitNull(HttpServletRequest request);
+    //    /**
+    //     * 获取当前登录用户（允许未登录）
+    //     *
+    //     * @param request
+    //     * @return
+    //     */
+    //    User getLoginUserPermitNull(HttpServletRequest request);
+
+    //    /**
+    //     * 是否为管理员
+    //     *
+    //     * @param request
+    //     * @return
+    //     */
+    //    boolean isAdmin(HttpServletRequest request);
 
     /**
      * 是否为管理员
      *
-     * @param request
      * @return
      */
-    boolean isAdmin(HttpServletRequest request);
+    boolean isAdmin();
 
     /**
      * 是否为管理员
@@ -79,13 +85,23 @@ public interface UserService extends IService<User> {
      */
     boolean isAdmin(User user);
 
+//    /**
+//     * 用户注销
+//     *
+//     * @param request
+//     * @return
+//     */
+//    boolean userLogout(HttpServletRequest request);
+
     /**
      * 用户注销
      *
-     * @param request
+     * @param token token
      * @return
      */
-    boolean userLogout(HttpServletRequest request);
+    boolean userLogout(String token);
+
+
 
     /**
      * 获取脱敏的已登录用户信息
@@ -112,11 +128,13 @@ public interface UserService extends IService<User> {
 
     /**
      * 个人用户修改密码
+     *
      * @param userPwdUpdateMyRequest
      * @param request
      * @return
      */
-    boolean changePwd(UserPwdUpdateMyRequest userPwdUpdateMyRequest,HttpServletRequest request);
+    boolean changePwd(UserPwdUpdateMyRequest userPwdUpdateMyRequest, HttpServletRequest request
+    , String token);
 
     /**
      * 获取查询条件

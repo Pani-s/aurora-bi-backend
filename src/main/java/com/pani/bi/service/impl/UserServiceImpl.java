@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pani.bi.common.ErrorCode;
 import com.pani.bi.constant.CommonConstant;
+import com.pani.bi.constant.RedisConstant;
 import com.pani.bi.constant.UserConstant;
 import com.pani.bi.exception.BusinessException;
 import com.pani.bi.exception.ThrowUtils;
 import com.pani.bi.mapper.UserMapper;
+import com.pani.bi.model.dto.user.UserDTO;
 import com.pani.bi.model.dto.user.UserPwdUpdateMyRequest;
 import com.pani.bi.model.dto.user.UserQueryRequest;
 import com.pani.bi.model.entity.User;
@@ -16,16 +18,24 @@ import com.pani.bi.model.enums.UserRoleEnum;
 import com.pani.bi.model.vo.LoginUserVO;
 import com.pani.bi.model.vo.UserVO;
 import com.pani.bi.service.UserService;
+import com.pani.bi.utils.JwtUtil;
 import com.pani.bi.utils.SqlUtils;
+import com.pani.bi.utils.UserUitls;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -36,19 +46,20 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
     /**
      * 盐值，混淆密码
      */
-    private static final String SALT = "yupi";
+    private static final String SALT = "kookv";
     private static final int PASSWORD_LEN = 3;
 
     @Override
     public boolean resetPassword(Long userId) {
 
         User user = this.getById(userId);
-        if(user == null){
-            throw new BusinessException(ErrorCode.OPERATION_ERROR,"该用户不存在！");
+        if (user == null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "该用户不存在！");
         }
 
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + "123456").getBytes());
@@ -101,7 +112,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+    public String userLogin(String userAccount, String userPassword, HttpServletRequest request) {
         // 1. 校验
         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
@@ -125,9 +136,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }
         // 3. 记录用户的登录态
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
-        return this.getLoginUserVO(user);
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("userName", user.getUserName());
+        userMap.put("userRole", user.getUserRole());
+        String token = JwtUtil.genToken(userMap);
+        //把token存储到redis中
+        ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
+        operations.set(RedisConstant.LOGIN_USER_KEY + token, token,
+                20, TimeUnit.MINUTES);
+        return token;
+        //        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        //        return this.getLoginUserVO(user);
     }
+
 
     /**
      * 获取当前登录用户
@@ -135,6 +157,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param request
      * @return
      */
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        // 已被拦截，所以不用判断
+        UserDTO currentUser = UserUitls.getUser();
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 从数据库查询（追求性能的话可以注释，直接走缓存）
+        long userId = currentUser.getId();
+        User user = this.getById(userId);
+        if (user == null) {
+            log.error("数据库未查到该用户相关的信息??!!");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        return user;
+    }
+
+
+    //    /**
+    //     * 获取当前登录用户
+    //     *
+    //     * @param request
+    //     * @return
+    //     */
+    /*
     @Override
     public User getLoginUser(HttpServletRequest request) {
         // 先判断是否已登录
@@ -151,38 +198,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         return currentUser;
     }
+    */
 
-    /**
-     * 获取当前登录用户（允许未登录）
-     *
-     * @param request
-     * @return
-     */
-    @Override
-    public User getLoginUserPermitNull(HttpServletRequest request) {
-        // 先判断是否已登录
-        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
-        User currentUser = (User) userObj;
-        if (currentUser == null || currentUser.getId() == null) {
-            return null;
-        }
-        // 从数据库查询（追求性能的话可以注释，直接走缓存）
-        long userId = currentUser.getId();
-        return this.getById(userId);
-    }
+
+    //    /**
+    //     * 是否为管理员
+    //     *
+    //     * @param request
+    //     * @return
+    //     */
+    //    @Override
+    //    public boolean isAdmin(HttpServletRequest request) {
+    //        // 仅管理员可查询
+    //        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+    //        User user = (User) userObj;
+    //        return isAdmin(user);
+    //    }
 
     /**
      * 是否为管理员
      *
-     * @param request
+     * @param
      * @return
      */
     @Override
-    public boolean isAdmin(HttpServletRequest request) {
-        // 仅管理员可查询
-        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
-        User user = (User) userObj;
-        return isAdmin(user);
+    public boolean isAdmin() {
+        UserDTO user = UserUitls.getUser();
+        return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
     }
 
     @Override
@@ -190,19 +232,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
     }
 
+//    /**
+//     * 用户注销
+//     *
+//     * @param request
+//     */
+//    @Override
+//    public boolean userLogout(HttpServletRequest request) {
+//        if (request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE) == null) {
+//            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
+//        }
+//        // 移除登录态
+//        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+//        return true;
+//    }
+
     /**
      * 用户注销
      *
-     * @param request
+     * @param token token
      */
     @Override
-    public boolean userLogout(HttpServletRequest request) {
-        if (request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE) == null) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
+    public boolean userLogout(String token) {
+        //删除redis中对应的token
+        try {
+            ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
+            operations.getOperations().delete(RedisConstant.LOGIN_USER_KEY + token);
+            return true;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR);
         }
-        // 移除登录态
-        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
-        return true;
     }
 
     @Override
@@ -234,7 +293,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public boolean changePwd(UserPwdUpdateMyRequest userPwdUpdateMyRequest, HttpServletRequest request) {
+    public boolean changePwd(UserPwdUpdateMyRequest userPwdUpdateMyRequest, HttpServletRequest request , String token) {
         String userPassword = userPwdUpdateMyRequest.getUserPassword();
         String newPassword = userPwdUpdateMyRequest.getNewPassword();
         String checkedNewPassword = userPwdUpdateMyRequest.getCheckedNewPassword();
@@ -265,6 +324,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String encryptNewPwd = DigestUtils.md5DigestAsHex((SALT + newPassword).getBytes());
         user.setUserPassword(encryptNewPwd);
         this.updateById(user);
+
+        //删除redis中对应的token
+        ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
+        operations.getOperations().delete(RedisConstant.LOGIN_USER_KEY + token);
+
         //用户退出应该是前端做
         return true;
     }
